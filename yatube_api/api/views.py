@@ -3,6 +3,7 @@ from rest_framework import viewsets, permissions, mixins
 from rest_framework.pagination import LimitOffsetPagination
 from posts.models import Group, Post, Follow
 
+from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     CommentSerializer, GroupSerializer, PostSerializer, FollowSerializer
 )
@@ -10,7 +11,7 @@ from .serializers import (
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = (IsOwnerOrReadOnly, permissions.IsAuthenticatedOrReadOnly)
 
     def get_post(self):
         """Получение поста из бд."""
