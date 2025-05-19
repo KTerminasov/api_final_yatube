@@ -1,13 +1,11 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, mixins
 from rest_framework.pagination import LimitOffsetPagination
-from posts.models import Group, Post
+from posts.models import Group, Post, Follow
 
-from .permissions import ReadOnly
 from .serializers import (
     CommentSerializer, GroupSerializer, PostSerializer, FollowSerializer
 )
-
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -46,7 +44,25 @@ class PostViewSet(viewsets.ModelViewSet):
         """Оптимизируем запросы в бд."""
         queryset = super().get_queryset()
         return queryset.select_related('author', 'group')
-    
+
     def perform_create(self, serializer):
         """Создание объекта публикации с правильным авторством."""
         serializer.save(author=self.request.user)
+
+
+class FollowViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet
+):
+    """ViewSet подписок с кастомным наследованием
+    для обработки только двух эндпоинтов.
+    """
+    serializer_class = FollowSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        return Follow.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
